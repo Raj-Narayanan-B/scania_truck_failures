@@ -1,5 +1,6 @@
 import os
 import shutil  # type: ignore
+import pandas as pd
 from src import logger
 from src.config.configuration_manager import ConfigurationManager
 from src.constants import REPO, BUCKET, TEST_DATA, TRAIN_DATA
@@ -9,10 +10,36 @@ from dagshub import get_repo_bucket_client
 from ensure import ensure_annotations
 
 
-class s3_data_downloader(ConfigurationManager):
+class s3_handle(ConfigurationManager):
     def __init__(self) -> None:
         super().__init__()
         self.s3 = get_repo_bucket_client(REPO + '/' + BUCKET)
+        self.temp_dir = self.get_data_path_config().temp_dir_root
+
+    def s3_data_upload(self,key: str, file: pd.DataFrame):
+        """
+            A function to upload a file to the project's dagshub S3 bucket
+
+            Parameters
+            ----------
+
+            key: str; default=None
+                key refers to the name, the file should be saved as in the s3 bucket
+            filepath: str; default=None
+                filepath refers to the local filepath where the file is located
+        """
+        prediction_path = self.temp_dir + '/' + key
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir, exist_ok=True)
+        file.to_csv(prediction_path, index=False)
+        self.s3.upload_file(Bucket=BUCKET,
+                            Filename=prediction_path,
+                            Key="Prediction_"+key
+                            )
+        logger.info(f"{os.path.basename(prediction_path)} uploaded to S3 successfully")
+        shutil.rmtree(self.temp_dir)
+
+
 
     def s3_data_download(self, key: str, filepath: str):
         """
@@ -26,8 +53,9 @@ class s3_data_downloader(ConfigurationManager):
             filepath: str; default=None
                 filepath refers to the local filepath where the downloaded file should be saved
         """
-        if not os.path.exists(filepath):
-            os.makedirs(filepath, exist_ok=True)
+        file_path, file_name = os.path.split(filepath)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path, exist_ok=True)
         self.s3.download_file(
             Bucket=BUCKET,
             # files_from_s3_dict['files_for_model_training'][file_name],
@@ -37,7 +65,7 @@ class s3_data_downloader(ConfigurationManager):
         )
 
 
-class file_tracker_component(s3_data_downloader):
+class file_lineage_component(s3_handle):
     def __init__(self):
         super().__init__()
         self.astra_dB_data_config = self.get_astra_dB_data_config()
@@ -163,14 +191,15 @@ class file_tracker_component(s3_data_downloader):
                 file_counter = 1
                 for i in range(len(files_in_s3_)):
                     if files_in_s3_[i]['Key'] == TEST_DATA or files_in_s3_[i]['Key'] == TRAIN_DATA:
-                        file_name = "training_set" if files_in_s3_[
-                            i]['Key'] == TRAIN_DATA else "testing_set"
-                        files_from_s3_dict['files_for_model_training'][file_name] = files_in_s3_[
-                            i]['Key']
+                        file_name = "training_set" if files_in_s3_[i]['Key'] == TRAIN_DATA else "testing_set"
+                        files_from_s3_dict['files_for_model_training'][file_name] = files_in_s3_[i]['Key']
                     else:
                         file_name = f"S3_file_{file_counter}"
-                        files_from_s3_dict['files_to_predict'][file_name] = files_in_s3_[
-                            i]['Key']
+                        if files_in_s3_[i]['Key'].startswith("Prediction"):
+                            continue
+                        else:
+                            value = files_in_s3_[i]['Key']
+                        files_from_s3_dict['files_to_predict'][file_name] = value
                         file_counter += 1
                 save_yaml(file=files_from_s3_dict,
                           filepath=self.data_config.data_from_s3,
@@ -179,7 +208,7 @@ class file_tracker_component(s3_data_downloader):
                 # self.data_db_upload()
 
 
-class data_db_uploader_component(file_tracker_component):
+class data_db_uploader_component(file_lineage_component):
     def __init__(self) -> None:
         super().__init__()
 

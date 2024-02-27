@@ -202,6 +202,18 @@ def make_synthetic_data_for_unit_testing():
     return sample_df
 
 
+def key_suggester(dict_:dict, key_name:str):
+    key_list = [key for key in dict_.keys() if key.startswith(key_name)]
+    present_key_numbers = [eval(i[len(f'{key_name}_file_'):]) for i in key_list]
+    if len(present_key_numbers) == 0:
+        present_key_numbers = [0]
+    for i in range(1,max(present_key_numbers)+1):
+        if i not in present_key_numbers:
+            suggested_key = f'{key_name}_file_{i}'
+            return(suggested_key)
+    return (f'{key_name}_file_{max(present_key_numbers)+1}')
+
+
 def batch_counter(dict_: dict):
     counter = 0
     for key in dict_.keys():
@@ -222,7 +234,11 @@ def get_files_list_in_s3(files_dict: dict):
     files_from_s3_dict = {}
     for i in range(len(files_dict)):
         files_from_s3_dict[f"file_{i+1}"] = files_dict[i]['Key']
-    return list(files_from_s3_dict.values())
+    files_from_s3_dict_temp_copy = files_from_s3_dict.copy()
+    for key,value in files_from_s3_dict.items():
+            if value.startswith("Prediction"):
+                files_from_s3_dict_temp_copy.pop(key)
+    return list(files_from_s3_dict_temp_copy.values())
 
 
 def file_lineage_s3_files_refresher(files_in_s3: dict, old_files: dict):
@@ -341,12 +357,12 @@ def file_lineage_updater(update_list: list, old_files_predicted: dict, old_files
             if i == value:
                 if key.startswith("S3"):
                     key_list.append(key)
-                    s3_count = s3_counter(old_files_predicted)
-                    old_files_predicted[f"S3_file_{s3_count+1}"] = i
+                    s3_key = key_suggester(old_files_predicted,"S3")
+                    old_files_predicted[f"{s3_key}"] = i
                 elif key.startswith('Batch'):
                     key_list.append(key)
-                    batch_count = batch_counter(old_files_predicted)
-                    old_files_predicted[f"Batch_file_{batch_count+1}"] = i
+                    batch_key = key_suggester(old_files_predicted,"Batch")
+                    old_files_predicted[f"{batch_key}"] = i
     for i in key_list:
         old_files_to_predict.pop(i)
 
@@ -381,12 +397,12 @@ def file_lineage_reverse_updater(reverse_update_list: list, old_files_predicted:
             if i == value:
                 if key.startswith("S3"):
                     key_list.append(key)
-                    s3_count = s3_counter(old_files_to_predict)
-                    old_files_to_predict[f"S3_file_{s3_count+1}"] = i
+                    s3_key = key_suggester(old_files_to_predict,"S3")
+                    old_files_to_predict[f"{s3_key}"] = i
                 elif key.startswith('Batch'):
                     key_list.append(key)
-                    batch_count = batch_counter(old_files_to_predict)
-                    old_files_to_predict[f"Batch_file_{batch_count+1}"] = i
+                    batch_key = key_suggester(old_files_to_predict,"Batch")
+                    old_files_to_predict[f"{batch_key}"] = i
     for i in key_list:
         old_files_predicted.pop(i)
 
@@ -782,15 +798,15 @@ def data_validation_helper(data_frame: pd.DataFrame):
     try:
         for i in test_col_list:
             data_frame[i] = data_frame[i].astype('float')
-        logger.info(
-            "dtype of input features converted from 'object' to 'float'")
+        logger.info("dtype of input features converted from 'object' to 'float'")
     except Exception as e:
         raise e
 
     return (data_frame)
 
 
-def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None, columns_with_0_std_dev: list = None):
+def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None,
+                    columns_with_0_std_dev: list = None, validation_helper_required:bool = False):
     """
         This validation function:
             * Checks and removes:
@@ -818,7 +834,8 @@ def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None, column
         logger.info(
             f"Dropped columns and their respective values:\n{missing_values_series}")
     else:
-        dataframe = data_validation_helper(dataframe)
+        if validation_helper_required is True:
+            dataframe = data_validation_helper(dataframe)
         logger.info(
             "Dropping same columns in test_data, that had more than 50% missing values in train_data")
         dataframe.drop(columns=cols_to_remove, inplace=True)

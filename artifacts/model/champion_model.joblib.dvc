@@ -1,5 +1,5 @@
 outs:
-- md5: 20def89eaf8ec49843fd810091ef3e88
-  size: 29734096
+- md5: 69188619d883cf9db1a9b81fa396d2f0
+  size: 17550696
   hash: md5
   path: champion_model.joblib
