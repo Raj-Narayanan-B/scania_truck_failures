@@ -1,0 +1,36 @@
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+pyyaml
+joblib
+python-box
+# flask
+mlflow
+dagshub
+dvc
+dvc[gdrive]
+dvc[s3]
+GitPython
+PyGithub
+pytest
+pytest-mock
+deprecation
+plotly
+flake8
+autopep8
+nbformat
+tox
+ensure
+docker
+optuna
+hyperopt
+tqdm
+xgboost
+lightgbm
+imbalanced-learn
+cassandra-driver
+geomet
+requests
+-e .
