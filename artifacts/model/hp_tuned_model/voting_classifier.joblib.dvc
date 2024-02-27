@@ -1,0 +1,5 @@
+outs:
+- md5: a45b073cd8e0486facf4f6881f07c7f7
+  size: 17540744
+  hash: md5
+  path: voting_classifier.joblib

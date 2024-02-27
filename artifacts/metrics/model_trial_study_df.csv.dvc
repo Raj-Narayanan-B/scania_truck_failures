@@ -1,0 +1,5 @@
+outs:
+- md5: c5b07034cf319895231e68891ee0a272
+  size: 6087
+  hash: md5
+  path: model_trial_study_df.csv

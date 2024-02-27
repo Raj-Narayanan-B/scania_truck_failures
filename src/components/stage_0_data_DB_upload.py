@@ -30,8 +30,10 @@ class s3_data_downloader(ConfigurationManager):
             os.makedirs(filepath, exist_ok=True)
         self.s3.download_file(
             Bucket=BUCKET,
-            Key=key,  # files_from_s3_dict['files_for_model_training'][file_name],
-            Filename=filepath  # self.data_config.temp_dir_root + f"/{files_from_s3_dict['files_for_model_training'][file_name]}"
+            # files_from_s3_dict['files_for_model_training'][file_name],
+            Key=key,
+            # self.data_config.temp_dir_root + f"/{files_from_s3_dict['files_for_model_training'][file_name]}"
+            Filename=filepath
         )
 
 
@@ -49,14 +51,16 @@ class file_tracker_component(s3_data_downloader):
         if os.path.exists(self.data_config.data_from_s3):
             old_files_ = load_yaml(self.data_config.data_from_s3)
 
-            old_files = file_lineage_s3_files_refresher(files_in_s3=files_in_s3_, old_files=old_files_)
+            old_files = file_lineage_s3_files_refresher(
+                files_in_s3=files_in_s3_, old_files=old_files_)
 
             old_files_for_model_training = old_files['files_for_model_training']
             old_files_predicted = old_files['files_predicted']
             old_files_to_predict = old_files['files_to_predict']
 
             if add_list:
-                old_files_predicted = file_lineage_adder(add_list, old_files_predicted)
+                old_files_predicted = file_lineage_adder(
+                    add_list, old_files_predicted)
 
             if update_list:
                 old_files_predicted, old_files_to_predict = file_lineage_updater(update_list=update_list,
@@ -159,11 +163,14 @@ class file_tracker_component(s3_data_downloader):
                 file_counter = 1
                 for i in range(len(files_in_s3_)):
                     if files_in_s3_[i]['Key'] == TEST_DATA or files_in_s3_[i]['Key'] == TRAIN_DATA:
-                        file_name = "training_set" if files_in_s3_[i]['Key'] == TRAIN_DATA else "testing_set"
-                        files_from_s3_dict['files_for_model_training'][file_name] = files_in_s3_[i]['Key']
+                        file_name = "training_set" if files_in_s3_[
+                            i]['Key'] == TRAIN_DATA else "testing_set"
+                        files_from_s3_dict['files_for_model_training'][file_name] = files_in_s3_[
+                            i]['Key']
                     else:
                         file_name = f"S3_file_{file_counter}"
-                        files_from_s3_dict['files_to_predict'][file_name] = files_in_s3_[i]['Key']
+                        files_from_s3_dict['files_to_predict'][file_name] = files_in_s3_[
+                            i]['Key']
                         file_counter += 1
                 save_yaml(file=files_from_s3_dict,
                           filepath=self.data_config.data_from_s3,

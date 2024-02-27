@@ -6,5 +6,5 @@ SCHEMA_PATH = Path('schema.yaml')
 TEST_DATA = "remote_aps_failure_testing_set.csv"
 TRAIN_DATA = "remote_aps_failure_training_set.csv"
 REPO = "Raj-Narayanan-B"
-BUCKET = "scania_truck"
+BUCKET = "scania_truck_failures"
 # TEMP_PATH = "artifacts/data/temp"

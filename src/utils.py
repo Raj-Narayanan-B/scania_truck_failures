@@ -81,7 +81,8 @@ def crypter(encrypt_or_decrypt: str, file_name: str, data_to_encrypt: dict = Non
 
         encrypted_data = {}
         for key, value in data_to_encrypt.items():
-            encrypted_data[key] = cipher_encrypt.encrypt(value.encode()).decode()
+            encrypted_data[key] = cipher_encrypt.encrypt(
+                value.encode()).decode()
 
         # Save encrypted data to a configuration file
         save_yaml(file=encrypted_data,
@@ -101,7 +102,8 @@ def crypter(encrypt_or_decrypt: str, file_name: str, data_to_encrypt: dict = Non
             # Decrypt sensitive information
             decrypted_data = {}
             for key, value in loaded_data.items():
-                decrypted_data[key] = cipher_decrypt.decrypt(value.encode()).decode()
+                decrypted_data[key] = cipher_decrypt.decrypt(
+                    value.encode()).decode()
 
             return decrypted_data
 
@@ -263,9 +265,57 @@ def file_lineage_s3_files_refresher(files_in_s3: dict, old_files: dict):
             old_files_to_predict.pop(key)
 
     if len(files_from_s3_list) > 0:
-        s3_count = s3_counter(old_files_to_predict)
-        for i, file in enumerate(files_from_s3_list):
-            old_files_to_predict[f'S3_file_{s3_count+(i+1)}'] = file
+        old_files_to_predict_copy = {}
+        old_s3_files_list = []
+        old_batch_files_list = []
+        for key, value in old_files_to_predict.items():
+            if key.startswith("S3"):
+                old_s3_files_list.append(value)
+
+        for key, value in old_files_to_predict.items():
+            if key.startswith("Batch"):
+                old_batch_files_list.append(value)
+
+        s3_files_list = old_s3_files_list+files_from_s3_list
+        s3_files_list = sorted(s3_files_list)
+        # print("I'm in IF BLOCK")
+        # print("s3_files_list:", s3_files_list)
+
+        batch_files_list = sorted(old_batch_files_list)
+        # print("batch_files_list:", batch_files_list)
+        for i in range(len(s3_files_list)):
+            old_files_to_predict_copy[f'S3_file_{i+1}'] = s3_files_list[i]
+        for i in range(len(batch_files_list)):
+            old_files_to_predict_copy[f'Batch_file_{i+1}'] = batch_files_list[i]
+
+        old_files_to_predict = old_files_to_predict_copy
+    else:
+        old_files_to_predict_copy = {}
+        old_s3_files_list = []
+        old_batch_files_list = []
+        for key, value in old_files_to_predict.items():
+            if key.startswith("S3"):
+                old_s3_files_list.append(value)
+
+        for key, value in old_files_to_predict.items():
+            if key.startswith("Batch"):
+                old_batch_files_list.append(value)
+
+        s3_files_list = old_s3_files_list
+        s3_files_list = sorted(s3_files_list)
+        # print("I'm in ELSE BLOCK")
+        # print("s3_files_list:", s3_files_list)
+
+        batch_files_list = sorted(old_batch_files_list)
+        # print("batch_files_list:", batch_files_list)
+        for i in range(len(s3_files_list)):
+            old_files_to_predict_copy[f'S3_file_{i+1}'] = s3_files_list[i]
+        for i in range(len(batch_files_list)):
+            old_files_to_predict_copy[f'Batch_file_{i+1}'] = batch_files_list[i]
+
+        old_files_to_predict = old_files_to_predict_copy
+
+
 
     old_files['files_for_model_training'] = old_files_for_model_training
     old_files['files_predicted'] = old_files_predicted
@@ -432,8 +482,10 @@ def DB_data_uploader(config: list):
         # print("Keyspace", keyspace)
         # print("Table_name", table_name)
 
-        colums_types_dict_from_data_df = dict(zip(list(data_df.columns), list(data_df.dtypes.replace({'object': 'text', 'int64': 'int'}).values)))
-        columns = ', '.join([f"{key} {value}" for key, value in colums_types_dict_from_data_df.items()])
+        colums_types_dict_from_data_df = dict(zip(list(data_df.columns), list(
+            data_df.dtypes.replace({'object': 'text', 'int64': 'int'}).values)))
+        columns = ', '.join(
+            [f"{key} {value}" for key, value in colums_types_dict_from_data_df.items()])
         create_table_statement = f"CREATE TABLE IF NOT EXISTS {keyspace}.{table_name} ({columns}, PRIMARY KEY (ident_id));"
         session.execute(create_table_statement)
         logger.info("Table created")
@@ -525,7 +577,8 @@ def stage_1_processing_function(dataframes: list) -> pd.DataFrame:
                                  on='ident_id')
     logger.info("Data Merging complete")
 
-    data_merger_final = data_merger_final.sort_values(by='ident_id').reset_index(drop=True)
+    data_merger_final = data_merger_final.sort_values(
+        by='ident_id').reset_index(drop=True)
     logger.info("Sorting and reseting_index complete")
 
     data_merger_final.drop(columns='ident_id', inplace=True)
@@ -542,7 +595,8 @@ def stage_1_processing_function(dataframes: list) -> pd.DataFrame:
 
 def schema_saver(dataframe: pd.DataFrame,  labels: list, mode: str, filepath=None):
     if len(labels) > 2:
-        raise ValueError("The 'labels' argument should not have more than 2 values.")
+        raise ValueError(
+            "The 'labels' argument should not have more than 2 values.")
     from src.config.configuration_manager import ConfigurationManager
     obj = ConfigurationManager()
     dict_cols = {}
@@ -588,7 +642,8 @@ def stage_2_processing_function(dataframe: pd.DataFrame) -> pd.DataFrame:
         # logger.info("Commencing Data Validation")
         # dataframe_train = data_validation(dataframe=dataframe)
 
-        logger.info("Saving schema with columns that, have less than 50% missing values and have > zero standard deviation")
+        logger.info(
+            "Saving schema with columns that, have less than 50% missing values and have > zero standard deviation")
         schema_saver(dataframe=dataframe,
                      labels=['Required_Features'],
                      mode='a')
@@ -719,14 +774,16 @@ def data_validation_helper(data_frame: pd.DataFrame):
 
     test_col_list = [i for i in data_frame.columns if i != 'class']
     if len(test_col_list) != 170:
-        raise ValueError("The length of dataframe's input features is not equal to 170")
+        raise ValueError(
+            "The length of dataframe's input features is not equal to 170")
     else:
         logger.info("Creating list of column names of input features")
 
     try:
         for i in test_col_list:
             data_frame[i] = data_frame[i].astype('float')
-        logger.info("dtype of input features converted from 'object' to 'float'")
+        logger.info(
+            "dtype of input features converted from 'object' to 'float'")
     except Exception as e:
         raise e
 
@@ -744,11 +801,13 @@ def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None, column
     # Checking for columns that have more than 50% missing values
     if cols_to_remove is None:
         logger.info("Fetching columns that have more than 50% missing values")
-        missing_values_series = pd.Series(dataframe.isna().sum().sort_values(ascending=False)*100/dataframe.shape[0])
+        missing_values_series = pd.Series(dataframe.isna().sum(
+        ).sort_values(ascending=False)*100/dataframe.shape[0])
         missing_values_series = missing_values_series[missing_values_series >= 50]
         cols_to_remove = missing_values_series.index
 
-        logger.info("Saving Schema with dropped columns that had more than 50% missing values under the name: 'columns_with_more_than_50%_missing_values")
+        logger.info(
+            "Saving Schema with dropped columns that had more than 50% missing values under the name: 'columns_with_more_than_50%_missing_values")
         schema_saver(dataframe=dataframe[cols_to_remove],
                      labels=['columns_with_more_than_50%_missing_values'],
                      mode='a')
@@ -756,18 +815,22 @@ def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None, column
         logger.info("Dropping columns that have more than 50% missing values")
         dataframe.drop(columns=cols_to_remove, inplace=True)
 
-        logger.info(f"Dropped columns and their respective values:\n{missing_values_series}")
+        logger.info(
+            f"Dropped columns and their respective values:\n{missing_values_series}")
     else:
         dataframe = data_validation_helper(dataframe)
-        logger.info("Dropping same columns in test_data, that had more than 50% missing values in train_data")
+        logger.info(
+            "Dropping same columns in test_data, that had more than 50% missing values in train_data")
         dataframe.drop(columns=cols_to_remove, inplace=True)
         logger.info(f"Dropped columns:\n{cols_to_remove}")
 
     # Checking for columns with zero standard deviation and dropping those columns
     if columns_with_0_std_dev is None:
-        columns_with_0_std_dev = list(dataframe.std()[dataframe.std() == 0].index)
+        columns_with_0_std_dev = list(
+            dataframe.std()[dataframe.std() == 0].index)
 
-        logger.info("Saving Schema with columns that have zero standard deviation under: 'columns_with_zero_standard_deviation'")
+        logger.info(
+            "Saving Schema with columns that have zero standard deviation under: 'columns_with_zero_standard_deviation'")
         schema_saver(dataframe=dataframe[columns_with_0_std_dev],
                      labels=['columns_with_zero_standard_deviation'],
                      mode='a')
@@ -781,15 +844,18 @@ def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None, column
         for name in dataframe.columns:
             prefix.append(name.split('_')[0])
         counter_dict = Counter(prefix)
-        hist_dict_ = {key: value for key, value in counter_dict.items() if value > 1}
-        hist_features = [column for column in dataframe.columns if column.split('_')[0] in list(hist_dict_.keys())]
+        hist_dict_ = {key: value for key,
+                      value in counter_dict.items() if value > 1}
+        hist_features = [column for column in dataframe.columns if column.split('_')[
+            0] in list(hist_dict_.keys())]
 
         logger.info("Saving Schema with histogram-features")
         schema_saver(dataframe=dataframe[hist_features],
                      labels=['histogram_columns'],
                      mode='a')
     else:
-        logger.info("Dropping same columns in test_data, that had zero standard deviation in train_data")
+        logger.info(
+            "Dropping same columns in test_data, that had zero standard deviation in train_data")
         dataframe.drop(columns=columns_with_0_std_dev, inplace=True)
         logger.info(f"Dropped columns:\n{columns_with_0_std_dev}")
 
@@ -963,7 +1029,8 @@ def parameter_tuning(model_class,
     tuner_report['Best_Cost'] = min_cost_value
 
     report_[model_name] = tuner_report
-    print(f'\n\n{model_name}\nMin Cost: {min_cost_value}\n{report_[model_name]}\n\n')
+    print(
+        f'\n\n{model_name}\nMin Cost: {min_cost_value}\n{report_[model_name]}\n\n')
     # print(report_.values())
     costs = [value['Best_Cost'] for value in report_.values()]
     min_cost = min(costs)
@@ -1043,7 +1110,8 @@ def parameter_tuning_2(models: dict, client: MlflowClient,
             "metrics": "['Balanced_Accuracy_Score', 'F1_Score', 'Accuracy_Score', 'Cost']"}
     count = 1
     for key, value in models.items():
-        exp_id = mlflow.create_experiment(name=f"{exp_count}_{key}_{exp_count}", tags=tags)
+        exp_id = mlflow.create_experiment(
+            name=f"{exp_count}_{key}_{exp_count}", tags=tags)
         # if key == 'Bagging_Classifier':
         #     light_gbm = best_model_finder(model_name='Light_GBM', search_registered_models=False)
 
@@ -1071,10 +1139,13 @@ def parameter_tuning_2(models: dict, client: MlflowClient,
                     print(f"\nBatch {i}")
                     pprint(f"\nSpace: {space}", compact=True)
                     pipeline = imb_pipeline(steps=[("KNN_Imputer", KNNImputer()),
-                                                   ("Robust_Scaler", RobustScaler()),
-                                                   ("SMOTETomek", SMOTETomek(sampling_strategy="minority", random_state=42)),
+                                                   ("Robust_Scaler",
+                                                    RobustScaler()),
+                                                   ("SMOTETomek", SMOTETomek(
+                                                       sampling_strategy="minority", random_state=42)),
                                                    (f"{key}", value(**space))])
-                    skf_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+                    skf_cv = StratifiedKFold(
+                        n_splits=3, shuffle=True, random_state=42)
                     cv_results = cross_validate(estimator=pipeline,
                                                 X=x,
                                                 y=y,
@@ -1302,13 +1373,16 @@ def stacking_clf_trainer(best_estimators: list[tuple], final_estimator,
     y_pred_stacking_clf = model_trainer_2(x_train=x_train, y_train=y_train,
                                           x_test=x_test, y_test=y_test,
                                           model=stacking_clf)
-    metrics_stacking_clf = eval_metrics(y_true=y_test, y_pred=y_pred_stacking_clf)
+    metrics_stacking_clf = eval_metrics(
+        y_true=y_test, y_pred=y_pred_stacking_clf)
     metrics_stacking_clf['model'] = stacking_clf
     metrics_stacking_clf['model_name'] = 'Stacked_Classifier'
 
 # Log Stacking_CLF in MLFlow
-    tags = {"metrics": "['Balanced_Accuracy_Score', 'F1_Score', 'Accuracy_Score', 'Cost']"}
-    exp_id_stack_clf = mlflow.create_experiment(name=f"{exp_count}_Stacked_Classifier_{exp_count}", tags=tags)
+    tags = {
+        "metrics": "['Balanced_Accuracy_Score', 'F1_Score', 'Accuracy_Score', 'Cost']"}
+    exp_id_stack_clf = mlflow.create_experiment(
+        name=f"{exp_count}_Stacked_Classifier_{exp_count}", tags=tags)
     with mlflow.start_run(experiment_id=exp_id_stack_clf,
                           run_name=f"Challenger {stacking_clf.__class__.__name__}",
                           tags={'model': 'Stacked_Classifier',
@@ -1321,7 +1395,8 @@ def stacking_clf_trainer(best_estimators: list[tuple], final_estimator,
                       should_log_parent_model=False,
                       artifact_path='candidate_Stacked_Classifier')
 
-        mlflow.log_metrics(metrics={"Accuracy_Score": metrics_stacking_clf['Accuracy_Score']})
+        mlflow.log_metrics(
+            metrics={"Accuracy_Score": metrics_stacking_clf['Accuracy_Score']})
         tags = {'model_type': "Challenger"}
         mlflow_logger(client=client,
                       model_name='Stacked_Classifier',
@@ -1352,8 +1427,10 @@ def voting_clf_trainer(best_estimators: list[tuple],
     metrics_voting_clf['model_name'] = 'Voting_Classifier'
 
 # Log Voting_CLF in MLFlow
-    tags = {"metrics": "['Balanced_Accuracy_Score', 'F1_Score', 'Accuracy_Score', 'Cost']"}
-    exp_id_voting_clf = mlflow.create_experiment(name=f"{exp_count}_Voting_Classifier_{exp_count}", tags=tags)
+    tags = {
+        "metrics": "['Balanced_Accuracy_Score', 'F1_Score', 'Accuracy_Score', 'Cost']"}
+    exp_id_voting_clf = mlflow.create_experiment(
+        name=f"{exp_count}_Voting_Classifier_{exp_count}", tags=tags)
     with mlflow.start_run(experiment_id=exp_id_voting_clf,
                           run_name=f"Challenger {voting_clf.__class__.__name__}",
                           tags={'model': 'Voting_Classifier',
@@ -1366,7 +1443,8 @@ def voting_clf_trainer(best_estimators: list[tuple],
                       should_log_parent_model=False,
                       artifact_path='candidate_Voting_Classifier')
 
-        mlflow.log_metrics(metrics={"Accuracy_Score": metrics_voting_clf['Accuracy_Score']})
+        mlflow.log_metrics(
+            metrics={"Accuracy_Score": metrics_voting_clf['Accuracy_Score']})
         tags = {'model_type': "Challenger"}
         mlflow_logger(client=client,
                       model_name='Voting_Classifier',
@@ -1388,7 +1466,8 @@ def model_trainer(mlflow_experiment_id, client: MlflowClient,
                                              x_test=x_test, y_test=y_test,
                                              model=model)
 
-    metrics_final_estimator = eval_metrics(y_true=y_test, y_pred=y_pred_final_estimator)
+    metrics_final_estimator = eval_metrics(
+        y_true=y_test, y_pred=y_pred_final_estimator)
     metrics_final_estimator['model'] = model
     metrics_final_estimator['model_name'] = list(model_dict.keys())[0]
     run_id = 0
@@ -1447,7 +1526,8 @@ def mlflow_logger(artifact_path: str, client: MlflowClient, metrics_: dict = Non
         print("Client_Registry_URI: ", client._registry_uri)
         filter_string = "tags.run_type ilike 'parent'"
         best_run_id = mlflow.search_runs(experiment_ids=[exp_id],
-                                         order_by=['metrics.Accuracy_Score DESC'],
+                                         order_by=[
+                                             'metrics.Accuracy_Score DESC'],
                                          filter_string=filter_string)[['run_id', 'artifact_uri', 'metrics.Accuracy_Score']]['run_id'][0]
         best_artifact_path = mlflow.search_runs(experiment_ids=[exp_id],
                                                 order_by=[
@@ -1546,7 +1626,8 @@ def mlflow_logger(artifact_path: str, client: MlflowClient, metrics_: dict = Non
                     params[key] = value
                     if value == 'nan':
                         params[key] = np.nan
-            print("Best Params:\n", {key: value for key, value in params.items() if value is not None}, "\n")
+            print("Best Params:\n", {
+                  key: value for key, value in params.items() if value is not None}, "\n")
             # signature=mlflow.xgboost.infer_signature(model_input=x_train,
             #                                             model_output=best_model.predict(x_train),
             #                                             params={key: value for key, value in params.items() if value is not None})

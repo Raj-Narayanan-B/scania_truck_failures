@@ -1,0 +1,5 @@
+outs:
+- md5: b2caffa69ec4850b0c30a606c658fc86
+  size: 18228407
+  hash: md5
+  path: stacking_classifier.joblib

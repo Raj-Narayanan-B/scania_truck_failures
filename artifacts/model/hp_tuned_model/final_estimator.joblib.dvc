@@ -1,0 +1,5 @@
+outs:
+- md5: 6c47b2f1f2b1b509d2428e0f0167c60d
+  size: 412826
+  hash: md5
+  path: final_estimator.joblib
