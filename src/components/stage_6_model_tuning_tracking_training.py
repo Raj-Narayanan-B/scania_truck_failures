@@ -5,8 +5,6 @@ from src.utils import (parameter_tuning_2, model_trainer, best_model_finder,
 from src.components.stage_5_final_preprocessing import stage_5_final_processing_component
 from src import logger
 import os
-# from src.constants import MLFLOW_URI
-
 from sklearn.linear_model import LogisticRegression, SGDClassifier  # noqa
 from sklearn.ensemble import (RandomForestClassifier, AdaBoostClassifier,  # noqa
                               GradientBoostingClassifier, BaggingClassifier, ExtraTreesClassifier,

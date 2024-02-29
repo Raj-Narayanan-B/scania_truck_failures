@@ -9,7 +9,6 @@ class stage_2_initial_processing_component(data_ingestion_component):
         super().__init__()
         self.preprocess_config = self.get_stage1_processing_config()
         self.data_config = self.get_data_path_config()
-        # self.split_config = self.get_data_split_config()
 
     def initial_processing(self):
         train_df_1 = pd.read_csv(self.data_config.train_data1)

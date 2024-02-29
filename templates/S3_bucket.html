@@ -31,7 +31,6 @@
 </head>
 
 <body>
-    <!-- ======= Contact Section ======= -->
     <section id="contact">
         <div class="container" data-aos="fade-up">
             <div class="row">
@@ -68,17 +67,6 @@
                                 </div>
                             </div>
 
-                            <!-- File upload input -->
-                            <!-- <div class="form-group mt-3">
-                                <div class="row mb-3">
-                                    <label for="inputNumber" class="col-sm-2 col-form-label">File Upload</label>
-                                    <div class="col-sm-10">
-                                        <input class="form-control" type="file" id="formFile" name="file_1"
-                                            accept=".csv" required>
-                                    </div>
-                                </div>
-                            </div> -->
-
                             <div class="my-3">
                                 <div class="loading">Loading</div>
                                 <div class="error-message"></div>
@@ -87,15 +75,81 @@
                             <div class="text-center"><button type="submit">Submit</button></div>
 
                         </form>
-                        <p></p>
-                        <div class="text-center"><a href="{{url_for('home_page')}}"><button
-                                    type="button">Home</button></a>
-                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
-    </section><!-- End Contact Section -->
+    </section>
+
+    <section id="filesLists">
+        <div class="container" data-aos="fade-up">
+            <div class="row">
+                <!-- Files to Predict List -->
+                <div class="col-md-6">
+                    <h3 class="section-title">Files to Predict</h3>
+                    <div class="section-title-divider"></div>
+                    <!-- Display list of available files with checkboxes -->
+                    <div class="form-group mt-3">
+                        <div class="col-sm-12">
+                            {% if files_to_predict_list %}
+                            {% for file in files_to_predict_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="{{ file }}"
+                                    name="selected_files_to_predict" value="{{ file }}">
+                                <label class="form-check-label" for="{{ file }}">{{ file }}</label>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p>No files to predict.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" onclick="updateFiles()">Update Selected</button>
+                    </div>
+                    <div id="updatesuccessMessage" class="text-success"></div>
+                    <div id="updateErrorMessage" class="text-error"></div>
+                </div>
+
+                <!-- Predicted Files List -->
+                <div class="col-md-6">
+                    <h3 class="section-title">Predicted Files</h3>
+                    <div class="section-title-divider"></div>
+                    <!-- Display list of predicted files with checkboxes -->
+                    <div class="form-group mt-3">
+                        <div class="col-sm-12">
+                            {% if predicted_files_list %}
+                            {% for file in predicted_files_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="{{ file }}"
+                                    name="selected_predicted_files" value="{{ file }}">
+                                <label class="form-check-label" for="{{ file }}">{{ file }}</label>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p>No files predicted.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="button" onclick="reverseFiles()">Reverse Update Selected</button>
+                    </div>
+                    <div id="reverseupdatesuccessMessage" class="text-success"></div>
+                    <div id="reverseupdateErrorMessage" class="text-error"></div>
+                </div>
+            </div>
+            <p></p>
+            <p></p>
+            <div class="text-center"><a href="{{url_for('home_page')}}"><button type="button">Home</button></a>
+            </div>
+            <p></p>
+            <p></p>
+        </div>
+    </section>
+    <p></p>
+    <p></p>
 
 
     <div id="preloader"></div>
@@ -112,6 +166,141 @@
 
     <!-- Template Main JS File -->
     <script src="../static/js/main.js"></script>
+
+    <script>
+        function updateFiles() {
+            // Get all checkboxes with the name 'selected_files'
+            var checkboxes = document.getElementsByName('selected_files_to_predict');
+
+            // Create an array to store selected files
+            var selectedFiles = [];
+
+            // Loop through each checkbox
+            for (var i = 0; i < checkboxes.length; i++) {
+                // Check if the checkbox is checked
+                if (checkboxes[i].checked) {
+                    // Add the value (file name) to the array
+                    selectedFiles.push(checkboxes[i].value);
+                }
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ url_for("update_file_lineage") }}', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');  // Change content type to JSON
+
+            // Convert the array to JSON and send it in the request body
+            xhr.send(JSON.stringify({ selected_files: selectedFiles }));
+
+            // Optional: You can handle the response from the server if needed
+            xhr.onreadystatechange = function () {
+                if (selectedFiles.length === 0) {
+                    update_showErrorMessage();
+                    return;
+                }
+                else {
+                    // Handle the response here if needed
+                    console.log(xhr.responseText);
+                    update_showSuccessMessage();
+                }
+            };
+        }
+        function update_showSuccessMessage() {
+            // Update the DOM to show a success message
+            clearMessages();
+            var successMessageDiv = document.getElementById('updatesuccessMessage');
+            if (successMessageDiv) {
+                successMessageDiv.innerHTML = 'Success! Files updated to "PREDICTED FILES" list. Please refresh';
+            }
+        }
+        function update_showErrorMessage() {
+            // Update the DOM to show a success message
+            clearMessages();
+            var successMessageDiv = document.getElementById('updateErrorMessage');
+            if (successMessageDiv) {
+                successMessageDiv.innerHTML = 'Error!';
+            }
+        }
+        function clearMessages() {
+            // Clear both success and error messages
+            var successMessageDiv = document.getElementById('updatesuccessMessage');
+            var errorMessageDiv = document.getElementById('updateErrorMessage');
+
+            if (successMessageDiv) {
+                successMessageDiv.innerHTML = '';
+            }
+
+            if (errorMessageDiv) {
+                errorMessageDiv.innerHTML = '';
+            }
+        }
+
+
+        function reverseFiles() {
+            // Get all checkboxes with the name 'selected_files'
+            var checkboxes = document.getElementsByName('selected_predicted_files');
+
+            // Create an array to store selected files
+            var selectedFiles = [];
+
+            // Loop through each checkbox
+            for (var i = 0; i < checkboxes.length; i++) {
+                // Check if the checkbox is checked
+                if (checkboxes[i].checked) {
+                    // Add the value (file name) to the array
+                    selectedFiles.push(checkboxes[i].value);
+                }
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ url_for("reverse_update_file_lineage") }}', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');  // Change content type to JSON
+
+            // Convert the array to JSON and send it in the request body
+            xhr.send(JSON.stringify({ selected_files: selectedFiles }));
+
+            // Optional: You can handle the response from the server if needed
+            xhr.onreadystatechange = function () {
+                if (selectedFiles.length === 0) {
+                    reverse_update_showErrorMessage();
+                    return;
+                }
+                else {
+                    // Handle the response here if needed
+                    console.log(xhr.responseText);
+                    reverse_update_showSuccessMessage();
+                }
+            };
+        }
+        function reverse_update_showSuccessMessage() {
+            // Update the DOM to show a success message
+            clearRMessages();
+            var successMessageDiv = document.getElementById('reverseupdatesuccessMessage');
+            if (successMessageDiv) {
+                successMessageDiv.innerHTML = 'Success! Files reverse updated to "FILES TO PREDICT" list. Please refresh.';
+            }
+        }
+        function reverse_update_showErrorMessage() {
+            // Update the DOM to show a success message
+            clearRMessages();
+            var successMessageDiv = document.getElementById('reverseupdateErrorMessage');
+            if (successMessageDiv) {
+                successMessageDiv.innerHTML = 'Error!';
+            }
+        }
+        function clearRMessages() {
+            // Clear both success and error messages
+            var successMessageDiv = document.getElementById('reverseupdatesuccessMessage');
+            var errorMessageDiv = document.getElementById('reverseupdateErrorMessage');
+
+            if (successMessageDiv) {
+                successMessageDiv.innerHTML = '';
+            }
+
+            if (errorMessageDiv) {
+                errorMessageDiv.innerHTML = '';
+            }
+        }
+    </script>
 
 </body>
 

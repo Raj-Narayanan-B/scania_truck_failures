@@ -10,7 +10,7 @@ class data_validation_component(stage_2_initial_processing_component):
         self.data_validation = self.get_data_validation_config()
 
     def data_validation_(self, dataframe_: pd.DataFrame = None, cols_to_remove_: list = None,
-                         columns_with_0_std_dev_: list = None, validation_helper_required:bool = False):
+                         columns_with_0_std_dev_: list = None, validation_helper_required: bool = False):
 
         if dataframe_ is None:
             dataframe_ = pd.read_csv(self.stage1_data.train_data_path)
@@ -23,7 +23,7 @@ class data_validation_component(stage_2_initial_processing_component):
             validated_data = data_validation(dataframe=dataframe_,
                                              cols_to_remove=cols_to_remove_,
                                              columns_with_0_std_dev=columns_with_0_std_dev_,
-                                             validation_helper_required = validation_helper_required)
+                                             validation_helper_required=validation_helper_required)
             return validated_data
 
 # validation_obj = data_validation_component()

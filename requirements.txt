@@ -9,6 +9,7 @@ python-box
 # flask
 mlflow
 dagshub
+dagshub-api
 dvc
 dvc[gdrive]
 dvc[s3]

@@ -31,7 +31,6 @@ from sklearn.datasets import make_classification
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 import json
-from src.constants import PARAMS_PATH  # , SCHEMA_PATH
 from src import logger
 from collections import Counter
 from cryptography.fernet import Fernet
@@ -42,11 +41,10 @@ import os
 import glob  # type: ignore
 import shutil  # type: ignore
 import subprocess  # type: ignore
-# from box import ConfigBox
 from pathlib import Path  # type: ignore
 import numpy as np
 import pandas as pd
-exp_count = 304
+exp_count = 305
 ML_Model = NewType('Machine_Learning_Model', object)
 
 w.filterwarnings('ignore')
@@ -69,20 +67,36 @@ def crypter(encrypt_or_decrypt: str, file_name: str, data_to_encrypt: dict = Non
         data_to_encrypt: dict
             The dictionary of the data to be encrypted. Required for encryption only.
     """
+    if file_name.__contains__("token"):
+        if file_name.__contains__("test"):
+            file_path = "Secrets/Tokens/Test Data Tokens/" + file_name + ".yaml"
+        else:
+            file_path = "Secrets/Tokens/" + file_name + ".yaml"
+
+    # elif file_name.__contains__("secure-connect"):
+    #     if file_name.__contains__("test"):
+    #         file_path = "Secrets/Bundles/Test Data Bundles/" + file_name + "_.zip"
+    #     else:
+    #         file_path = "Secrets/Bundles/" + file_name + "_.zip"
+    else:
+        file_path = "Secrets/Secrets/" + file_name + "_config.yaml"
+
+    # Secrets\Bundles\secure-connect-scania-truck-failure-1.zip
+    # Secrets\Bundles\Test Data Bundles\secure-connect-scania-truck-failure-test1.zip
+        # Secrets/Tokens/scania_truck_failure_1-token.json
+        # Secrets/Tokens/Test Data Tokens/scania_truck_failure_test1-token.json
     key_path = "Secrets/Keys/" + file_name + "_secrets.key"
-    file_path = "Secrets/Secrets/" + file_name + "_config.yaml"
 
     if encrypt_or_decrypt == 'encrypt':
         # Generate the unique for this data
         key = Fernet.generate_key()
-        with open(key_path, 'wb') as key_file:
+        with open(os.path.abspath(key_path), 'wb') as key_file:
             key_file.write(key)
         cipher_encrypt = Fernet(key)
 
         encrypted_data = {}
         for key, value in data_to_encrypt.items():
-            encrypted_data[key] = cipher_encrypt.encrypt(
-                value.encode()).decode()
+            encrypted_data[key] = cipher_encrypt.encrypt(value.encode()).decode()
 
         # Save encrypted data to a configuration file
         save_yaml(file=encrypted_data,
@@ -102,8 +116,7 @@ def crypter(encrypt_or_decrypt: str, file_name: str, data_to_encrypt: dict = Non
             # Decrypt sensitive information
             decrypted_data = {}
             for key, value in loaded_data.items():
-                decrypted_data[key] = cipher_decrypt.decrypt(
-                    value.encode()).decode()
+                decrypted_data[key] = cipher_decrypt.decrypt(value.encode()).decode()
 
             return decrypted_data
 
@@ -202,15 +215,15 @@ def make_synthetic_data_for_unit_testing():
     return sample_df
 
 
-def key_suggester(dict_:dict, key_name:str):
+def key_suggester(dict_: dict, key_name: str):
     key_list = [key for key in dict_.keys() if key.startswith(key_name)]
     present_key_numbers = [eval(i[len(f'{key_name}_file_'):]) for i in key_list]
     if len(present_key_numbers) == 0:
         present_key_numbers = [0]
-    for i in range(1,max(present_key_numbers)+1):
+    for i in range(1, max(present_key_numbers)+1):
         if i not in present_key_numbers:
             suggested_key = f'{key_name}_file_{i}'
-            return(suggested_key)
+            return (suggested_key)
     return (f'{key_name}_file_{max(present_key_numbers)+1}')
 
 
@@ -235,9 +248,9 @@ def get_files_list_in_s3(files_dict: dict):
     for i in range(len(files_dict)):
         files_from_s3_dict[f"file_{i+1}"] = files_dict[i]['Key']
     files_from_s3_dict_temp_copy = files_from_s3_dict.copy()
-    for key,value in files_from_s3_dict.items():
-            if value.startswith("Prediction"):
-                files_from_s3_dict_temp_copy.pop(key)
+    for key, value in files_from_s3_dict.items():
+        if value.startswith("Prediction"):
+            files_from_s3_dict_temp_copy.pop(key)
     return list(files_from_s3_dict_temp_copy.values())
 
 
@@ -331,8 +344,6 @@ def file_lineage_s3_files_refresher(files_in_s3: dict, old_files: dict):
 
         old_files_to_predict = old_files_to_predict_copy
 
-
-
     old_files['files_for_model_training'] = old_files_for_model_training
     old_files['files_predicted'] = old_files_predicted
     old_files['files_to_predict'] = old_files_to_predict
@@ -357,11 +368,11 @@ def file_lineage_updater(update_list: list, old_files_predicted: dict, old_files
             if i == value:
                 if key.startswith("S3"):
                     key_list.append(key)
-                    s3_key = key_suggester(old_files_predicted,"S3")
+                    s3_key = key_suggester(old_files_predicted, "S3")
                     old_files_predicted[f"{s3_key}"] = i
                 elif key.startswith('Batch'):
                     key_list.append(key)
-                    batch_key = key_suggester(old_files_predicted,"Batch")
+                    batch_key = key_suggester(old_files_predicted, "Batch")
                     old_files_predicted[f"{batch_key}"] = i
     for i in key_list:
         old_files_to_predict.pop(i)
@@ -397,11 +408,11 @@ def file_lineage_reverse_updater(reverse_update_list: list, old_files_predicted:
             if i == value:
                 if key.startswith("S3"):
                     key_list.append(key)
-                    s3_key = key_suggester(old_files_to_predict,"S3")
+                    s3_key = key_suggester(old_files_to_predict, "S3")
                     old_files_to_predict[f"{s3_key}"] = i
                 elif key.startswith('Batch'):
                     key_list.append(key)
-                    batch_key = key_suggester(old_files_to_predict,"Batch")
+                    batch_key = key_suggester(old_files_to_predict, "Batch")
                     old_files_to_predict[f"{batch_key}"] = i
     for i in key_list:
         old_files_predicted.pop(i)
@@ -465,9 +476,11 @@ def DB_data_uploader(config: list):
         logger.info("Token loaded")
         # print(token)
 
-        with open(token) as json_file:
-            secrets = json.load(json_file)
-            # logger.info(f"{config[1]} json file is loaded")
+        # with open(token) as json_file:
+        #     secrets = json.load(json_file)
+        secrets = crypter(encrypt_or_decrypt='decrypt',
+                          file_name=os.path.basename(token).replace(".yaml", ""))
+        # logger.info(f"{config[1]} json file is loaded")
 
         secure_connect_bundle = data_db_config[0]
         logger.info("Secure Connect Bundle loaded")
@@ -487,7 +500,7 @@ def DB_data_uploader(config: list):
         session = cluster.connect()
         logger.info("Cluster connected")
 
-        data_df_path = data_db_config[4]
+        data_df_path = os.path.normpath(data_db_config[4])
         data_df = pd.read_csv(data_df_path)
         # print(data_df)
 
@@ -509,10 +522,10 @@ def DB_data_uploader(config: list):
         dsbulk_command = [
             "dsbulk",
             "load",
-            "-url", data_df_path,
+            "-url", str(data_df_path.replace('\\', '/')),
             "-k", keyspace,
             "-t", table_name,
-            "-b", secure_connect_bundle,
+            "-b", str(secure_connect_bundle.replace('\\', '/')),
             "-u", CLIENT_ID,
             "-p", CLIENT_SECRET,
         ]
@@ -545,9 +558,12 @@ def DB_data_uploader(config: list):
 
 
 def DB_data_downloader(config: list):
-    with open(config[1]) as f:
-        secrets = json.load(f)
-        logger.info(f"{config[1]} json file is loaded")
+    token = config[1]
+    # with open(token) as f:
+    #     secrets = json.load(f)
+    secrets = crypter(encrypt_or_decrypt='decrypt',
+                      file_name=os.path.basename(token).replace(".yaml", ""))
+    # logger.info(f"{token} json file is loaded")
 
     cloud_config = {'secure_connect_bundle': config[0],
                     'connect_timeout': None}
@@ -806,7 +822,7 @@ def data_validation_helper(data_frame: pd.DataFrame):
 
 
 def data_validation(dataframe: pd.DataFrame, cols_to_remove: list = None,
-                    columns_with_0_std_dev: list = None, validation_helper_required:bool = False):
+                    columns_with_0_std_dev: list = None, validation_helper_required: bool = False):
     """
         This validation function:
             * Checks and removes:
@@ -906,7 +922,7 @@ def parameter_tuning(model_class,
                      report_: dict,
                      client: MlflowClient,
                      *args):
-
+    from src.constants import PARAMS_PATH
     tuner_report = {}
     tuner_report['Optuna'] = {}
     tuner_report['HyperOpt'] = {}
@@ -1112,6 +1128,7 @@ def parameter_tuning_2(models: dict, client: MlflowClient,
     compared and the best parent is chosen as the Best_HP_Tuned_Model.
     """
     from pprint import pprint  # type: ignore
+    from src.constants import PARAMS_PATH
 
     batch_list = batch_data_create(dataframe)
 
@@ -1321,6 +1338,7 @@ def best_model_finder(models: dict = None, client: MlflowClient = None, model_na
 
     # Get the dictionary of all the registered challenger models from MLFlow.
     # This dict will have model names as keys and the run_IDs as values.
+    from src.constants import PARAMS_PATH
     if search_registered_models is False:
         best_run_id = mlflow.search_runs(experiment_names=[f"{exp_count}_{model_name}_{exp_count}"],
                                          filter_string=f"tags.model ilike '{model_name}' and tags.run_type ilike 'parent'",
@@ -1382,7 +1400,7 @@ def stacking_clf_trainer(best_estimators: list[tuple], final_estimator,
     stacking_clf = StackingClassifier(estimators=best_estimators,
                                       final_estimator=final_estimator,
                                       cv=3,
-                                      n_jobs=-1,
+                                      #   n_jobs=-1,
                                       verbose=3,
                                       passthrough=True)
 
@@ -1433,7 +1451,7 @@ def voting_clf_trainer(best_estimators: list[tuple],
                        client: MlflowClient,
                        model_path: Path):
     voting_clf = VotingClassifier(estimators=best_estimators,
-                                  n_jobs=-1,
+                                  #   n_jobs=-1,
                                   verbose=True)
 # Test with Voting_Classifier
     y_pred_voting_clf = model_trainer_2(x_train=x_train, y_train=y_train,
@@ -1925,7 +1943,7 @@ def batch_data_create(data: pd.DataFrame):
 
 # DEPRECATED
 def params_extractor(data: pd.DataFrame):
-
+    from src.constants import PARAMS_PATH
     params_yaml = load_yaml(PARAMS_PATH)
 
     data = data[data['state'] == 'COMPLETE']

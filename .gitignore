@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 scania_truck/
 scania_truck_failures/
+notebooks/
 # C extensions
 *.so
 
@@ -160,8 +161,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 scania_truck/DLLs/_lzma.pyd.c~.conda_trash
-notebooks/sample_schema_for_DB.yaml
-notebooks/sample_schema.yaml
 README for DB.md
 # artifacts/data/processed/stage_1_processing/preprocessed_test_data.csv
 # artifacts/data/processed/stage_1_processing/preprocessed_train_data.csv
@@ -177,12 +176,12 @@ README for DB.md
 # artifacts/data/processed/stage_2_processing/processed_test_data.csv
 .gitattributes
 
-notebooks/mlruns/
 mlruns/
 stacked_classifier_params.txt
 sample_model.joblib
 artifacts/data/transformed_test_df.csv
 preprocessor.joblib
 sample.yaml
-notebooks/logs/logs.txt
 artifacts/data/temp/
+# notebooks/1_trail.ipynb
+notebooks/1_trail.ipynb

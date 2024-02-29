@@ -1,4 +1,5 @@
-from src.constants import CONFIG_PATH, PARAMS_PATH, SCHEMA_PATH
+from src.constants import (CONFIG_PATH, PARAMS_PATH, SCHEMA_PATH,
+                           MLFLOW_TRACKING_URI, MLFLOW_TRACKING_PASSWORD, MLFLOW_TRACKING_USERNAME)
 from src.entity.entity_config import (AstraDBDataConf,
                                       DataPathConf,
                                       Stage1ProcessingConf,
@@ -8,11 +9,10 @@ from src.entity.entity_config import (AstraDBDataConf,
                                       DataSplitConf,
                                       ModelTrainerConf,
                                       ModelMetricsConf)
-from src.utils import load_yaml, crypter
+from src.utils import load_yaml
 # from dvc import repo
 # from github import Github, Auth
 import os
-# import mlflow.environment_variables
 
 
 class ConfigurationManager:
@@ -23,12 +23,9 @@ class ConfigurationManager:
         self.params_path = load_yaml(PARAMS_PATH)
         self.schema = SCHEMA_PATH
         self.schema_path = load_yaml(SCHEMA_PATH)
-        os.environ['MLFLOW_TRACKING_URI'] = crypter(encrypt_or_decrypt='decrypt', file_name='mlflow')['MLFLOW_TRACKING_URI']
-        os.environ['MLFLOW_TRACKING_PASSWORD'] = crypter(encrypt_or_decrypt='decrypt', file_name='mlflow')['MLFLOW_TRACKING_PASSWORD']
-        os.environ['MLFLOW_TRACKING_USERNAME'] = crypter(encrypt_or_decrypt='decrypt', file_name='mlflow')['MLFLOW_TRACKING_USERNAME']
-        # mlflow.environment_variables.MLFLOW_TRACKING_URI = crypter(encrypt_or_decrypt='decrypt', file_name='mlflow')['MLFLOW_TRACKING_URI']  # noqa
-        # mlflow.environment_variables.MLFLOW_TRACKING_PASSWORD = crypter(encrypt_or_decrypt='decrypt', file_name='mlflow')['MLFLOW_TRACKING_PASSWORD']  # noqa
-        # mlflow.environment_variables.MLFLOW_TRACKING_USERNAME = crypter(encrypt_or_decrypt='decrypt', file_name='mlflow')['MLFLOW_TRACKING_USERNAME']  # noqa
+        os.environ['MLFLOW_TRACKING_URI'] = MLFLOW_TRACKING_URI
+        os.environ['MLFLOW_TRACKING_PASSWORD'] = MLFLOW_TRACKING_PASSWORD
+        os.environ['MLFLOW_TRACKING_USERNAME'] = MLFLOW_TRACKING_USERNAME
 
     # def git_dvc_track(self, file_to_track: list):
     #     # os.environ[]
@@ -111,25 +108,21 @@ class ConfigurationManager:
             train_data_3_token=os.path.abspath(config['train_data3']['token']),
             train_data_3_key_space=config['train_data3']['key_space_train_data_3'],
             train_data_3_table=config['train_data3']['table_train_data_3'],
-            # train_data_3_path=config.train_data3.path,
 
             test_data_1_secure_connect_bundle=os.path.abspath(config['test_data1']['secure_connect_bundle']),
             test_data_1_token=os.path.abspath(config['test_data1']['token']),
             test_data_1_key_space=config['test_data1']['key_space_test_data_1'],
             test_data_1_table=config['test_data1']['table_test_data_1'],
-            # test_data_1_path=config.test_data1.path,
 
             test_data_2_secure_connect_bundle=os.path.abspath(config['test_data2']['secure_connect_bundle']),
             test_data_2_token=os.path.abspath(config['test_data2']['token']),
             test_data_2_key_space=config['test_data2']['key_space_test_data_2'],
             test_data_2_table=config['test_data2']['table_test_data_2'],
-            # test_data_2_path=config.test_data2.path,
 
             test_data_3_secure_connect_bundle=os.path.abspath(config['test_data3']['secure_connect_bundle']),
             test_data_3_token=os.path.abspath(config['test_data3']['token']),
             test_data_3_key_space=config['test_data3']['key_space_test_data_3'],
             test_data_3_table=config['test_data3']['table_test_data_3'],
-            # test_data_3_path=config.test_data3.path,
 
             root_directory=os.path.abspath(config['root_dir'])
         )

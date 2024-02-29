@@ -3,20 +3,22 @@ import shutil  # type: ignore
 import pandas as pd
 from src import logger
 from src.config.configuration_manager import ConfigurationManager
-from src.constants import REPO, BUCKET, TEST_DATA, TRAIN_DATA
+from src.constants import REPO, BUCKET, TEST_DATA, TRAIN_DATA, TOKEN
 from src.utils import (DB_data_uploader, load_yaml, save_yaml, file_lineage_s3_files_refresher,
                        file_lineage_adder, file_lineage_updater, file_lineage_reverse_updater)
 from dagshub import get_repo_bucket_client
+from dagshub.auth.tokens import add_app_token
 from ensure import ensure_annotations
 
 
 class s3_handle(ConfigurationManager):
     def __init__(self) -> None:
         super().__init__()
+        add_app_token(TOKEN)
         self.s3 = get_repo_bucket_client(REPO + '/' + BUCKET)
         self.temp_dir = self.get_data_path_config().temp_dir_root
 
-    def s3_data_upload(self,key: str, file: pd.DataFrame):
+    def s3_data_upload(self, key: str, file: pd.DataFrame):
         """
             A function to upload a file to the project's dagshub S3 bucket
 
@@ -36,10 +38,9 @@ class s3_handle(ConfigurationManager):
                             Filename=prediction_path,
                             Key="Prediction_"+key
                             )
-        logger.info(f"{os.path.basename(prediction_path)} uploaded to S3 successfully")
+        logger.info(
+            f"{os.path.basename(prediction_path)} uploaded to S3 successfully")
         shutil.rmtree(self.temp_dir)
-
-
 
     def s3_data_download(self, key: str, filepath: str):
         """
@@ -58,9 +59,7 @@ class s3_handle(ConfigurationManager):
             os.makedirs(file_path, exist_ok=True)
         self.s3.download_file(
             Bucket=BUCKET,
-            # files_from_s3_dict['files_for_model_training'][file_name],
             Key=key,
-            # self.data_config.temp_dir_root + f"/{files_from_s3_dict['files_for_model_training'][file_name]}"
             Filename=filepath
         )
 
@@ -108,73 +107,6 @@ class file_lineage_component(s3_handle):
             save_yaml(files_from_s3_dict,
                       filepath=self.data_config.data_from_s3,
                       mode='w')
-            # predicted_files_counter = 1
-            # files_to_predict_counter = 1
-
-            # # get the list version of the old files
-            # old_files_list = list(old_files['files_predicted'].values())
-            # all_old_files_list = list(old_files['files_predicted'].values()) + list(old_files['files_to_predict'].values())
-
-            # # initialize the values to be written into the file_lineage file
-            # # the files are gotten from S3 - this will be the initial input values list
-            # files_ = []
-            # for i in range(len(files_in_s3)):
-            #     files_.append(files_in_s3[i]['Key'])
-
-            # # get the files that were manually added previously (manually - added via bulk/batch prediction option in html page)
-            # # this will work only if "add_predicted_files" parameter is given.
-            # previously_added_files = list(set(all_old_files_list) - set(files_))
-
-            # # if "add_predicted_files" value is given, it will be checked if it is already present in the overall old files list
-            # # if present, error will be raised, else, it will be appended into old_files list and the input values list
-            # if add_predicted_files:
-            #     for i, file_name in enumerate(add_predicted_files):
-            #         if file_name in old_files_list or file_name in all_old_files_list:
-            #             raise ValueError(f"Duplicate file entry: {file_name}")
-            #         else:
-
-            #             old_files_list.append(file_name)
-            #             files_.append(file_name)
-
-            # # if there are any previously_added_files, they will also be appended to the input values list
-            # try:
-            #     for file_name in previously_added_files:
-            #         files_.append(file_name)
-            # except Exception:
-            #     pass
-
-            # # This will enable the transfer of files from the "files_predicted" section to "files_to_predict" section
-            # # It is done by simply removing the file from "old_files_list"
-            # if reverse_update_predicted_files:
-            #     for file_name in reverse_update_predicted_files:
-            #         old_files_list.remove(file_name)
-
-            # # This will enable the transfer of files from "files_to_predict" section to "files_predicted" section
-            # # This will update the list, "search_list" based on whether the parameter: "update_predicted_files" is given or not
-            # if update_predicted_files:
-            #     search_list = update_predicted_files + old_files_list
-            # else:
-            #     search_list = old_files_list
-
-            # # This will iterate through input values list and check if the value in it is present in the "search_list"
-            # for i in range(len(files_)):
-            #     if files_[i] == TEST_DATA or files_[i] == TRAIN_DATA:
-            #         file_name = "training_set" if files_[i] == TRAIN_DATA else "testing_set"
-            #         files_from_s3_dict['files_for_model_training'][file_name] = files_[i]
-
-            #     elif files_[i] in search_list:
-            #         file_name = f"file_{predicted_files_counter}"
-            #         files_from_s3_dict['files_predicted'][file_name] = files_[i]
-            #         predicted_files_counter += 1
-
-            #     else:
-            #         file_name = f"file_{files_to_predict_counter}"
-            #         files_from_s3_dict['files_to_predict'][file_name] = files_[i]
-            #         files_to_predict_counter += 1
-
-            # save_yaml(file=files_from_s3_dict,
-            #           filepath=self.data_config.data_from_s3,
-            #           mode='w')
 
         # This else block is the initial file creation of the file_lineage file from S3.
         # The files present in S3 will all be tracked under the  "files_to_predict" section intially.
@@ -191,8 +123,10 @@ class file_lineage_component(s3_handle):
                 file_counter = 1
                 for i in range(len(files_in_s3_)):
                     if files_in_s3_[i]['Key'] == TEST_DATA or files_in_s3_[i]['Key'] == TRAIN_DATA:
-                        file_name = "training_set" if files_in_s3_[i]['Key'] == TRAIN_DATA else "testing_set"
-                        files_from_s3_dict['files_for_model_training'][file_name] = files_in_s3_[i]['Key']
+                        file_name = "training_set" if files_in_s3_[
+                            i]['Key'] == TRAIN_DATA else "testing_set"
+                        files_from_s3_dict['files_for_model_training'][file_name] = files_in_s3_[
+                            i]['Key']
                     else:
                         file_name = f"S3_file_{file_counter}"
                         if files_in_s3_[i]['Key'].startswith("Prediction"):
@@ -204,8 +138,6 @@ class file_lineage_component(s3_handle):
                 save_yaml(file=files_from_s3_dict,
                           filepath=self.data_config.data_from_s3,
                           mode='w')
-
-                # self.data_db_upload()
 
 
 class data_db_uploader_component(file_lineage_component):

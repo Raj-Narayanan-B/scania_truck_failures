@@ -8,37 +8,31 @@ class AstraDBDataConf:
     train_data_1_token: Path
     train_data_1_key_space: str
     train_data_1_table: str
-    # train_data_1_path: Path
 
     train_data_2_secure_connect_bundle: Path
     train_data_2_token: Path
     train_data_2_key_space: str
     train_data_2_table: str
-    # train_data_2_path: Path
 
     train_data_3_secure_connect_bundle: Path
     train_data_3_token: Path
     train_data_3_key_space: str
     train_data_3_table: str
-    # train_data_3_path: Path
 
     test_data_1_secure_connect_bundle: Path
     test_data_1_token: Path
     test_data_1_key_space: str
     test_data_1_table: str
-    # test_data_1_path: Path
 
     test_data_2_secure_connect_bundle: Path
     test_data_2_token: Path
     test_data_2_key_space: str
     test_data_2_table: str
-    # test_data_2_path: Path
 
     test_data_3_secure_connect_bundle: Path
     test_data_3_token: Path
     test_data_3_key_space: str
     test_data_3_table: str
-    # test_data_3_path: Path
 
     root_directory: Path
 

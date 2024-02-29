@@ -16,7 +16,6 @@ class stage_5_final_processing_component(data_splitting_component):
             os.remove(self.preprocessor_config.preprocessor_path)
         # remove histogram features after NaN imputation
         # remove duplicates finally before returning!
-        # Check if PCA can be done!
         if args:
             pre_processed_train_df = args[0]
             pre_processed_test_df = args[1]
