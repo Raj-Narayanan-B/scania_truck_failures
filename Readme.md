@@ -31,7 +31,7 @@ This machine learning project addresses the prediction of Scania truck failures,
     * more than 50% missing values
     * zero standard deviation 
     are dropped.
-* Histogram features are saved for reference.
+* Histogram features are saved for reference. 
 
 
 
