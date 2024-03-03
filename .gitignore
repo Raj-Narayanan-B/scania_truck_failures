@@ -180,7 +180,7 @@ mlruns/
 stacked_classifier_params.txt
 sample_model.joblib
 artifacts/data/transformed_test_df.csv
-preprocessor.joblib
+# preprocessor.joblib
 sample.yaml
 artifacts/data/temp/
 # notebooks/1_trail.ipynb
