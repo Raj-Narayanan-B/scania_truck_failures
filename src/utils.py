@@ -1173,13 +1173,10 @@ def parameter_tuning_2(models: dict, client: MlflowClient,
                     print(f"\nBatch {i}")
                     pprint(f"\nSpace: {space}", compact=True)
                     pipeline = imb_pipeline(steps=[("KNN_Imputer", KNNImputer()),
-                                                   ("Robust_Scaler",
-                                                    RobustScaler()),
-                                                   ("SMOTETomek", SMOTETomek(
-                                                       sampling_strategy="minority", random_state=42)),
+                                                   ("Robust_Scaler", RobustScaler()),
+                                                   ("SMOTETomek", SMOTETomek(sampling_strategy="minority", random_state=42)),
                                                    (f"{key}", value(**space))])
-                    skf_cv = StratifiedKFold(
-                        n_splits=3, shuffle=True, random_state=42)
+                    skf_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
                     cv_results = cross_validate(estimator=pipeline,
                                                 X=x,
                                                 y=y,
