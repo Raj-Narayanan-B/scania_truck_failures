@@ -3,7 +3,8 @@ import random  # type: ignore
 import numpy as np
 import os
 from src.utils import (stage_1_processing_function, stage_2_processing_function,
-                       make_synthetic_data_for_unit_testing)
+                       make_synthetic_data_for_unit_testing, load_yaml)
+from src.constants import SCHEMA_PATH
 import tempfile  # type: ignore
 
 
@@ -56,6 +57,10 @@ def data_stage_1():
 @pytest.fixture
 def data_stage_2(data_stage_1):
     dataframe, schema = data_stage_1
+    columns_missing_values = list(load_yaml(SCHEMA_PATH)['columns_with_more_than_50%_missing_values'].keys())
+    columns_0_std_dev = list(load_yaml(SCHEMA_PATH)['columns_with_zero_standard_deviation'].keys())
+
+    dataframe.drop(axis=1, columns=columns_missing_values+columns_0_std_dev, inplace=True)
     processed_df = stage_2_processing_function(dataframe.iloc[:5000, :])
     yield (processed_df)
 

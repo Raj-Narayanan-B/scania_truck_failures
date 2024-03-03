@@ -1,4 +1,3 @@
-from box.config_box import ConfigBox
 import pytest
 from src.utils import (dynamic_threshold, load_yaml,
                        schema_saver, train_test_splitter, eval_metrics)
@@ -13,7 +12,7 @@ def test_dynamic_threshold(data_dynamic_threshold):
 @pytest.mark.parametrize('data_load_yaml', ['params.yaml', None])
 def test_load_yaml(data_load_yaml):
     if data_load_yaml == 'params.yaml':
-        assert type(load_yaml(data_load_yaml)) == ConfigBox
+        assert type(load_yaml(data_load_yaml)) == dict
     else:
         with pytest.raises(Exception):
             _ = load_yaml(data_load_yaml)
@@ -41,7 +40,7 @@ def test_train_test_splitting(data_stage_2):
 
 def test_schema_saver(schema_saver_fixture):
     filepath, test_data = schema_saver_fixture
-    schema_saver(dataframe=test_data, filepath=filepath)
+    schema_saver(dataframe=test_data, filepath=filepath, labels=['Features', 'Target'], mode='w')
     test_schema = load_yaml(filepath)
     assert list(test_schema['Features'].keys()) == list(test_data.drop(columns='class').columns)
     assert list(test_schema['Target'].keys()) == list(test_data[['class']].columns)
