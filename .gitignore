@@ -185,3 +185,12 @@ sample.yaml
 artifacts/data/temp/
 # notebooks/1_trail.ipynb
 notebooks/1_trail.ipynb
+Secrets/Keys/dagshub_secrets.key
+Secrets/Keys/dvc_secrets.key
+Secrets/Keys/mlflow_secrets.key
+Secrets/Keys/scania_truck_failure_test1-token_secrets.key
+Secrets/Keys/scania_truck_failure_test2-token_secrets.key
+Secrets/Keys/scania_truck_failure_test3-token_secrets.key
+Secrets/Keys/scania_truck_failure_1-token_secrets.key
+Secrets/Keys/scania_truck_failure_train_2-token_secrets.key
+Secrets/Keys/scania_truck_failure_train_3-token_secrets.key
